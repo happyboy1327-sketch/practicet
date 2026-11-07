@@ -5,14 +5,32 @@ const MODEL = 'gemma-4-26b-a4b-it';
 
 const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 
-async function askGemma(promptText) {
+async function askGemma {
     const requestData = {
         contents: [
             {
                 role: 'user',
-                parts: [{ text: promptText }]
-            }
-        ]
+                parts: [{ text: `당신은 상식 퀴즈 전문가다. 아래 JSON 포맷을 지켜 문제를 생성하시오.
+                **JSON 형식 예시:**
+[
+  {
+    "question": "질문 내용",
+    "choices": ["보기1", "보기2", "보기3", "보기4"],
+    "correctAnswerIndex": 1,
+    "explanation": "정답은 보기2입니다. 이유는... 보기1은 틀렸습니다. 왜냐하면... 보기3은... 보기4는..."
+  }
+]
+
+JSON 배열만 반환하세요.
+`,
+                }
+            ]
+        }
+    ],
+        generationConfig: { 
+        responseMimeType: "application/json",
+        temperature: 0.3, 
+        }
     };
 
     try {
@@ -57,7 +75,7 @@ async function askGemma(promptText) {
     }
 }
 
-askGemma('안녕하세요')
+askGemma()
     .then(answer => {
         console.log('응답:', answer);
     });
