@@ -5,31 +5,39 @@ const MODEL = 'gemma-4-26b-a4b-it';
 
 const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 
-async function askGemma {
+async function askGemma(){
     const requestData = {
         contents: [
             {
                 role: 'user',
-                parts: [{ text: `당신은 상식 퀴즈 전문가다. 아래 JSON 포맷을 지켜 문제를 생성하시오.
-                **JSON 형식 예시:**
+                parts: [{
+    text: `상식 퀴즈 3문제를 생성하시오.
+
+반드시 다음 규칙을 준수하시오.
+1. 출력은 JSON 배열 하나로만 구성한다.
+2. JSON 배열 앞뒤에 설명, 역할, 계획, 검증 결과를 출력하지 않는다.
+3. 마크다운 코드 블록을 사용하지 않는다.
+4. 각 객체는 question, choices, correctAnswerIndex, explanation 필드를 포함한다.
+5. correctAnswerIndex는 0부터 시작한다.
+
+출력 형식:
 [
   {
-    "question": "질문 내용",
+    "question": "질문",
     "choices": ["보기1", "보기2", "보기3", "보기4"],
-    "correctAnswerIndex": 1,
-    "explanation": "정답은 보기2입니다. 이유는... 보기1은 틀렸습니다. 왜냐하면... 보기3은... 보기4는..."
+    "correctAnswerIndex": 0,
+    "explanation": "해설"
   }
-]
-
-JSON 배열만 반환하세요.
-`,
-                }
-            ]
+]`
+}]
         }
     ],
         generationConfig: { 
         responseMimeType: "application/json",
-        temperature: 0.3, 
+        thinkingConfig: {
+            thinkingLevel: "minimal"
+        },
+        temperature: 0.3
         }
     };
 
@@ -57,8 +65,22 @@ JSON 배열만 반환하세요.
             .map(part => part.text)
             .join('');
 
+            
+            /*if (generatedContent.candidates && generatedContent.candidates.length > 0) {
+                quizJsonText = generatedContent.candidates[0].content.parts[0].text;
+            } else {
+                 throw new Error("Gemini API 응답에서 유효한 후보를 찾을 수 없습니다.");
+            }*/
+
+            const cleanedJsonText = answer.trim();
+const newQuizData = JSON.parse(cleanedJsonText);
+
+if (!Array.isArray(newQuizData)) {
+    throw new Error('JSON 배열 형식이 아닙니다.');
+}
+
         console.log('[Gemma] API 호출 성공');
-        return answer;
+        return newQuizData;
 
     } catch (error) {
         console.error('[Gemma] API 호출 실패');
@@ -76,6 +98,10 @@ JSON 배열만 반환하세요.
 }
 
 askGemma()
-    .then(answer => {
-        console.log('응답:', answer);
-    });
+    .then(data => {
+        if (data !== null) {
+                process.stdout.write(
+                    JSON.stringify(data, null, 2) + '\n'
+                     );
+                   }
+            });
